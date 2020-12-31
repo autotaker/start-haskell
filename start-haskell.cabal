@@ -21,6 +21,10 @@ common shared-properties
   build-depends:       base ^>=4.13.0.0 
   default-language:    Haskell2010
 
+common test-depends
+  build-depends:       hspec ^>= 2.7.4
+  build-tool-depends:  hspec-discover:hspec-discover
+
 library
   import:              shared-properties
   exposed-modules:     MyLib
@@ -37,7 +41,9 @@ executable start-haskell
   hs-source-dirs:      app
 
 test-suite start-haskell-test
-  import:              shared-properties
+  import:              shared-properties, test-depends
   type:                exitcode-stdio-1.0
   hs-source-dirs:      test
-  main-is:             MyLibTest.hs
+  main-is:             Spec.hs
+  other-modules:       MyLibSpec
+  build-depends:       start-haskell
