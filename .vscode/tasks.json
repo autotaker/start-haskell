@@ -4,6 +4,19 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "cabal-fmt",
+            "type": "shell",
+            "command": "cabal-fmt -i start-haskell.cabal",
+            "presentation": {
+                "echo": true,
+                "reveal": "never",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            }
+        },
+        {
             "label": "build",
             "type": "shell",
             "command": "cabal build",
@@ -19,7 +32,10 @@
             "group": {
                 "kind": "build",
                 "isDefault": true
-            }
+            },
+            "dependsOn": [
+                "cabal-fmt"
+            ]
         },
         {
             "label": "test",
@@ -37,7 +53,10 @@
             "group": {
                 "kind": "test",
                 "isDefault": true
-            }
-        }
+            },
+            "dependsOn": [
+                "cabal-fmt"
+            ]
+        },
     ]
 }
