@@ -19,7 +19,7 @@
         {
             "label": "build",
             "type": "shell",
-            "command": "cabal build",
+            "command": "cabal build --enable-tests",
             "presentation": {
                 "echo": true,
                 "reveal": "always",
