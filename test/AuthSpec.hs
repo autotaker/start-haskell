@@ -33,6 +33,10 @@ userRepositoryMock =
         when anything `thenReturn` ()
     }
 
+-- 準備：ユーザが一人だけ登録されたデータベースのモック
+env :: Env
+env = Env userRepositoryMock
+
 user1 :: User
 user1 = User "user1" "password1"
 
@@ -41,24 +45,18 @@ spec = do
   describe "signin" $ do
     context "ユーザ名とパスワードが一致する時" $ do
       it "`Just user`を返す" $ do
-        -- 準備：ユーザが一人だけ登録されたデータベースのモック
-        let env = Env userRepositoryMock
         -- 実行 & 検証
         runRIO env (signin "user1" "password1")
           `shouldReturn` Just user1
 
     context "ユーザ名とパスワードが一致しない時" $ do
       it "`Nothing`を返す" $ do
-        -- 準備：ユーザが一人だけ登録されたデータベースのモック
-        let env = Env userRepositoryMock
         -- 実行 & 検証
         runRIO env (signin "user1" "invalid_password")
           `shouldReturn` Nothing
 
     context "ユーザが登録されていない場合" $ do
       it "`Nothing`を返す" $ do
-        -- 準備：ユーザが一人だけ登録されたデータベースのモック
-        let env = Env userRepositoryMock
         -- 実行 & 検証
         runRIO env (signin "user2" "password2")
           `shouldReturn` Nothing
