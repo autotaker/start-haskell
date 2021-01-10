@@ -1,8 +1,9 @@
 module Auth where
 
+import Control.Method (invoke)
 import Control.Monad.Trans.Maybe (MaybeT (MaybeT, runMaybeT))
 import Lens.Micro.Platform (Lens', makeLenses)
-import RIO (RIO, guard, view, (^.))
+import RIO (RIO, guard, (^.))
 import User (Password, User, Username, password)
 
 data UserRepository env = UserRepository
@@ -17,8 +18,7 @@ class HasUserRepository env where
 
 signin :: (HasUserRepository env) => Username -> Password -> RIO env (Maybe User)
 signin usernm passwd = runMaybeT $ do
-  method <- view (userRepositoryL . findByUsername)
-  user <- MaybeT $ method usernm
+  user <- MaybeT $ invoke (userRepositoryL . findByUsername) usernm
   guard $ (user ^. password) == passwd
   pure user
 
