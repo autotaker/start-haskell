@@ -54,3 +54,11 @@ spec = do
         -- 実行 & 検証
         runRIO env (signin "user1" "invalid_password")
           `shouldReturn` Nothing
+
+    context "ユーザが登録されていない場合" $ do
+      it "`Nothing`を返す" $ do
+        -- 準備：ユーザが一人だけ登録されたデータベースのモック
+        let env = Env userRepositoryMock
+        -- 実行 & 検証
+        runRIO env (signin "user2" "password2")
+          `shouldReturn` Nothing
