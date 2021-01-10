@@ -1,16 +1,20 @@
 module AuthSpec where
 
-import Auth (HasUserRepository (userRepositoryL), UserRepository (UserRepository, _createUser, _findByUsername), signin, signup)
+import Auth (HasUserRepository (userRepositoryL), UserRepository (UserRepository, _createUser, _findByUsername), createUser, signin, signup)
 import Lens.Micro.Platform (makeLenses)
-import RIO (runRIO, throwString, view)
-import Test.Hspec (Spec, context, describe, it, shouldReturn)
+import RIO (MonadReader (local), runRIO, throwString, view, void, (%~))
+import Test.Hspec (Spec, context, describe, it, shouldReturn, shouldSatisfy)
 import Test.Method
   ( ArgsMatcher (args),
     anything,
+    call,
     mockup,
     thenAction,
     thenReturn,
+    times,
+    watch,
     when,
+    withMonitor_,
   )
 import User (User (User), username)
 
@@ -68,3 +72,13 @@ spec = do
         it "`Just user`を返す" $ do
           runRIO env (signup "user2" "password2")
             `shouldReturn` Just user2
+
+        it "`createUser user`を呼び出す" $ do
+          logs <- runRIO env $
+            -- `Monitor`を新しく作成し、記録されたメソッド呼び出しのログを返す
+            withMonitor_ $ \monitor ->
+              -- `createUser`メソッドの呼び出しを監視する
+              local (userRepositoryL . createUser %~ watch monitor) $
+                void $ signup "user2" "password2"
+          -- ログ中で引数が`user2`と等しい呼び出しがちょうど一回あることをアサート
+          logs `shouldSatisfy` (== 1) `times` call (args (== user2))
