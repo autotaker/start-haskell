@@ -2,8 +2,16 @@ module AuthSpec where
 
 import Auth (HasUserRepository (userRepositoryL), UserRepository (UserRepository, _createUser, _findByUsername), signin)
 import Lens.Micro.Platform (makeLenses)
-import RIO (runRIO, throwString, (^.))
+import RIO (runRIO, throwString, view)
 import Test.Hspec (Spec, context, describe, it, shouldReturn)
+import Test.Method
+  ( ArgsMatcher (args),
+    anything,
+    mockup,
+    thenAction,
+    thenReturn,
+    when,
+  )
 import User (User (User), username)
 
 newtype Env = Env {_userRepository :: UserRepository Env}
@@ -16,14 +24,13 @@ instance HasUserRepository Env where
 userRepositoryMock :: UserRepository env
 userRepositoryMock =
   UserRepository
-    { _findByUsername = \user ->
-        if user == "user1"
-          then pure $ Just user1
-          else pure Nothing,
-      _createUser = \user ->
-        if user ^. username == "user1"
-          then throwString "user1 is already registered"
-          else pure ()
+    { _findByUsername = mockup $ do
+        when (args (== "user1")) `thenReturn` Just user1
+        when anything `thenReturn` Nothing,
+      _createUser = mockup $ do
+        when (args ((== "user1") . view username))
+          `thenAction` throwString "user1 is already registered"
+        when anything `thenReturn` ()
     }
 
 user1 :: User
