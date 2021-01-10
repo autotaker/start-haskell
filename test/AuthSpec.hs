@@ -1,6 +1,6 @@
 module AuthSpec where
 
-import Auth (HasUserRepository (userRepositoryL), UserRepository (UserRepository, _createUser, _findByUsername), signin)
+import Auth (HasUserRepository (userRepositoryL), UserRepository (UserRepository, _createUser, _findByUsername), signin, signup)
 import Lens.Micro.Platform (makeLenses)
 import RIO (runRIO, throwString, view)
 import Test.Hspec (Spec, context, describe, it, shouldReturn)
@@ -37,8 +37,9 @@ userRepositoryMock =
 env :: Env
 env = Env userRepositoryMock
 
-user1 :: User
+user1, user2 :: User
 user1 = User "user1" "password1"
+user2 = User "user2" "password2"
 
 spec :: Spec
 spec = do
@@ -60,3 +61,10 @@ spec = do
         -- 実行 & 検証
         runRIO env (signin "user2" "password2")
           `shouldReturn` Nothing
+
+  describe "signup" $ do
+    context "登録されていないユーザ名の時" $ do
+      context "パスワードが空文字列でない時" $ do
+        it "`Just user`を返す" $ do
+          runRIO env (signup "user2" "password2")
+            `shouldReturn` Just user2
