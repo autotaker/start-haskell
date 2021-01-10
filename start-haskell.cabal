@@ -32,7 +32,10 @@ common shared-properties
     , transformers
 
   default-language:   Haskell2010
-  default-extensions: TemplateHaskell
+  default-extensions:
+    OverloadedStrings
+    TemplateHaskell
+
   ghc-options:
     -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates
     -Wmissing-import-lists -Wcompat
@@ -46,6 +49,7 @@ library
 
   -- cabal-fmt: expand src
   exposed-modules:
+    Auth
     User
     UserRepository
 
@@ -69,5 +73,5 @@ test-suite start-haskell-test
   main-is:        Spec.hs
 
   -- cabal-fmt: expand test -Spec
-  other-modules:
+  other-modules:  AuthSpec
   build-depends:  start-haskell
