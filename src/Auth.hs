@@ -23,4 +23,7 @@ signin usernm passwd = runMaybeT $ do
   pure user
 
 signup :: (HasUserRepository env) => Username -> Password -> RIO env (Maybe User)
-signup usernm passwd = pure $ Just $ User usernm passwd
+signup usernm passwd = do
+  let user = User usernm passwd
+  invoke (userRepositoryL . createUser) user
+  pure $ Just user
