@@ -87,3 +87,9 @@ spec = do
       it "`Nothing`を返す" $ do
         runRIO env (signup "user1" "password1")
           `shouldReturn` Nothing
+      it "`createUser`を呼び出さない" $ do
+        logs <- runRIO env $
+          withMonitor_ $ \monitor ->
+            local (userRepositoryL . createUser %~ watch monitor) $
+              void $ signup "user1" "password1"
+        logs `shouldSatisfy` (== 0) `times` call anything
