@@ -3,7 +3,7 @@ module Auth where
 import Control.Method (invoke)
 import Control.Monad.Trans.Maybe (MaybeT (MaybeT, runMaybeT))
 import Lens.Micro.Platform (Lens', makeLenses)
-import RIO (RIO, guard, (^.))
+import RIO (MonadTrans (lift), RIO, guard, isNothing, (^.))
 import User (Password, User (User), Username, password)
 
 data UserRepository env = UserRepository
@@ -23,7 +23,9 @@ signin usernm passwd = runMaybeT $ do
   pure user
 
 signup :: (HasUserRepository env) => Username -> Password -> RIO env (Maybe User)
-signup usernm passwd = do
+signup usernm passwd = runMaybeT $ do
   let user = User usernm passwd
-  invoke (userRepositoryL . createUser) user
-  pure $ Just user
+  mUser <- lift $ invoke (userRepositoryL . findByUsername) usernm
+  guard $ isNothing mUser
+  lift $ invoke (userRepositoryL . createUser) user
+  pure user
