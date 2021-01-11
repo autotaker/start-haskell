@@ -1,6 +1,6 @@
 module AuthSpec where
 
-import Auth (HasPasswordGenerator (passwordGeneratorL), HasUserRepository (userRepositoryL), PasswordGenerator (PasswordGenerator, _generate), UserRepository (UserRepository, _createUser, _findByUsername), createUser, signin, signup)
+import Auth (HasPasswordGenerator (passwordGeneratorL), HasUserRepository (userRepositoryL), PasswordGenerator (PasswordGenerator, _generate), UserRepository (UserRepository, _createUser, _findByUsername), createUser, generate, signin, signup)
 import Lens.Micro.Platform (makeLenses)
 import RIO (MonadReader (local), runRIO, throwString, view, void, (%~))
 import Test.Hspec (Spec, context, describe, it, shouldReturn, shouldSatisfy)
@@ -87,6 +87,19 @@ spec = do
         it "ランダムなパスワードを生成し`Just user`を返す" $ do
           runRIO env (signup "user2" "")
             `shouldReturn` Just user2'
+        it "`generate 10`を呼び出す" $ do
+          logs <- runRIO env $
+            withMonitor_ $ \monitor ->
+              local (passwordGeneratorL . generate %~ watch monitor) $
+                void $ signup "user2" ""
+          logs `shouldSatisfy` (== 1) `times` call (args (== 10))
+        it "ランダムなパスワードで`createUser user`を呼び出す" $ do
+          logs <- runRIO env $
+            withMonitor_ $ \monitor ->
+              local (userRepositoryL . createUser %~ watch monitor) $
+                void $ signup "user2" ""
+          logs `shouldSatisfy` (== 1) `times` call (args (== user2'))
+
       context "パスワードが空文字列でない時" $ do
         it "`Just user`を返す" $ do
           runRIO env (signup "user2" "password2")
