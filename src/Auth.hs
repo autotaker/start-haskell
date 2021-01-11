@@ -4,6 +4,7 @@ import Control.Method (invoke)
 import Control.Monad.Trans.Maybe (MaybeT (MaybeT, runMaybeT))
 import Lens.Micro.Platform (Lens', makeLenses)
 import RIO (MonadTrans (lift), RIO, guard, isNothing, (^.))
+import qualified RIO.Text as T
 import User (Password, User (User), Username, password)
 
 data UserRepository env = UserRepository
@@ -32,7 +33,11 @@ signin usernm passwd = runMaybeT $ do
 
 signup :: (HasUserRepository env, HasPasswordGenerator env) => Username -> Password -> RIO env (Maybe User)
 signup usernm passwd = runMaybeT $ do
-  let user = User usernm passwd
+  passwd' <-
+    if T.null passwd
+      then lift $ invoke (passwordGeneratorL . generate) 10
+      else pure passwd
+  let user = User usernm passwd'
   mUser <- lift $ invoke (userRepositoryL . findByUsername) usernm
   guard $ isNothing mUser
   lift $ invoke (userRepositoryL . createUser) user
