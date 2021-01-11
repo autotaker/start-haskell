@@ -82,3 +82,8 @@ spec = do
                 void $ signup "user2" "password2"
           -- ログ中で引数が`user2`と等しい呼び出しがちょうど一回あることをアサート
           logs `shouldSatisfy` (== 1) `times` call (args (== user2))
+
+    context "登録ずみユーザ名の時" $ do
+      it "`Nothing`を返す" $ do
+        runRIO env (signup "user1" "password1")
+          `shouldReturn` Nothing
