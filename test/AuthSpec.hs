@@ -1,6 +1,6 @@
 module AuthSpec where
 
-import Auth (HasUserRepository (userRepositoryL), UserRepository (UserRepository, _createUser, _findByUsername), createUser, signin, signup)
+import Auth (HasPasswordGenerator (passwordGeneratorL), HasUserRepository (userRepositoryL), PasswordGenerator (PasswordGenerator, _generate), UserRepository (UserRepository, _createUser, _findByUsername), createUser, signin, signup)
 import Lens.Micro.Platform (makeLenses)
 import RIO (MonadReader (local), runRIO, throwString, view, void, (%~))
 import Test.Hspec (Spec, context, describe, it, shouldReturn, shouldSatisfy)
@@ -18,12 +18,18 @@ import Test.Method
   )
 import User (User (User), username)
 
-newtype Env = Env {_userRepository :: UserRepository Env}
+data Env = Env
+  { _userRepository :: UserRepository Env,
+    _passwordGenerator :: PasswordGenerator Env
+  }
 
 makeLenses ''Env
 
 instance HasUserRepository Env where
   userRepositoryL = userRepository
+
+instance HasPasswordGenerator Env where
+  passwordGeneratorL = passwordGenerator
 
 userRepositoryMock :: UserRepository env
 userRepositoryMock =
@@ -39,11 +45,20 @@ userRepositoryMock =
 
 -- 準備：ユーザが一人だけ登録されたデータベースのモック
 env :: Env
-env = Env userRepositoryMock
+env = Env userRepositoryMock passwordGeneratorMock
 
-user1, user2 :: User
+passwordGeneratorMock :: PasswordGenerator Env
+passwordGeneratorMock =
+  PasswordGenerator
+    { _generate =
+        mockup $
+          when anything `thenReturn` "random_password"
+    }
+
+user1, user2, user2' :: User
 user1 = User "user1" "password1"
 user2 = User "user2" "password2"
+user2' = User "user2" "random_password"
 
 spec :: Spec
 spec = do
@@ -68,6 +83,10 @@ spec = do
 
   describe "signup" $ do
     context "登録されていないユーザ名の時" $ do
+      context "パスワードが空文字列の時" $ do
+        it "ランダムなパスワードを生成し`Just user`を返す" $ do
+          runRIO env (signup "user2" "")
+            `shouldReturn` Just user2'
       context "パスワードが空文字列でない時" $ do
         it "`Just user`を返す" $ do
           runRIO env (signup "user2" "password2")

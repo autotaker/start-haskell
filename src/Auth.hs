@@ -13,8 +13,16 @@ data UserRepository env = UserRepository
 
 makeLenses ''UserRepository
 
+newtype PasswordGenerator env = PasswordGenerator
+  {_generate :: Int -> RIO env Password}
+
+makeLenses ''PasswordGenerator
+
 class HasUserRepository env where
   userRepositoryL :: Lens' env (UserRepository env)
+
+class HasPasswordGenerator env where
+  passwordGeneratorL :: Lens' env (PasswordGenerator env)
 
 signin :: (HasUserRepository env) => Username -> Password -> RIO env (Maybe User)
 signin usernm passwd = runMaybeT $ do
@@ -22,7 +30,7 @@ signin usernm passwd = runMaybeT $ do
   guard $ (user ^. password) == passwd
   pure user
 
-signup :: (HasUserRepository env) => Username -> Password -> RIO env (Maybe User)
+signup :: (HasUserRepository env, HasPasswordGenerator env) => Username -> Password -> RIO env (Maybe User)
 signup usernm passwd = runMaybeT $ do
   let user = User usernm passwd
   mUser <- lift $ invoke (userRepositoryL . findByUsername) usernm
